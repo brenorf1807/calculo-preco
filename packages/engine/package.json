@@ -1,0 +1,20 @@
+{
+  "name": "@calculo-preco/engine",
+  "version": "0.1.0",
+  "description": "Motor de cálculo de precificação e tributos (domínio puro, sem dependência de framework/banco/UI)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "decimal.js": "^10.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}

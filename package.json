@@ -1,0 +1,20 @@
+{
+  "name": "calculo-preco",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Sistema de precificação com cálculo tributário para MEI / Simples Nacional / Reforma Tributária",
+  "workspaces": [
+    "packages/engine",
+    "packages/api"
+  ],
+  "scripts": {
+    "test:engine": "npm run test --workspace=packages/engine",
+    "build:engine": "npm run build --workspace=packages/engine",
+    "build:api": "npm run build --workspace=packages/api",
+    "dev:api": "npm run dev --workspace=packages/api",
+    "dev:web": "npm --prefix apps/web run start"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

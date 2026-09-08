@@ -1,0 +1,60 @@
+<h1>Custos fixos</h1>
+<p>
+  Despesas mensais que não dependem do volume vendido (aluguel, internet, contador...). O DAS-MEI é configurado
+  separadamente na tela <strong>Empresa</strong> — o sistema já soma ele aqui automaticamente no cálculo.
+</p>
+
+<div class="card" *ngIf="despesas.length">
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Categoria</th>
+        <th>Valor mensal</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let d of despesas">
+        <td>{{ d.nome }}</td>
+        <td>{{ d.categoria }}</td>
+        <td>R$ {{ d.valorMensalReais | number: '1.2-2' }}</td>
+        <td class="linha-acoes">
+          <button (click)="editar(d)">Editar</button>
+          <button class="perigo" (click)="remover(d.id)">Remover</button>
+        </td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2"><strong>Total mensal</strong></td>
+        <td colspan="2"><strong>R$ {{ totalMensal | number: '1.2-2' }}</strong></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<div class="card">
+  <h2>{{ editandoId ? 'Editar despesa fixa' : 'Nova despesa fixa' }}</h2>
+  <form [formGroup]="form" (ngSubmit)="salvar()">
+    <div class="grid-form">
+      <div>
+        <label>Nome</label>
+        <input formControlName="nome" placeholder="Ex.: Aluguel" />
+      </div>
+      <div>
+        <label>Categoria</label>
+        <input formControlName="categoria" placeholder="infraestrutura, serviços..." />
+      </div>
+      <div>
+        <label>Valor mensal (R$)</label>
+        <input type="number" step="0.01" formControlName="valorMensalReais" />
+      </div>
+    </div>
+    <div *ngIf="erro" class="alerta alerta-critico">{{ erro }}</div>
+    <div class="linha-acoes">
+      <button type="submit" class="primario" [disabled]="form.invalid">{{ editandoId ? 'Salvar alterações' : 'Adicionar despesa' }}</button>
+      <button type="button" *ngIf="editandoId" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

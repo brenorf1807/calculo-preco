@@ -1,0 +1,50 @@
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  background: white;
+  border-bottom: 1px solid #dcdcd6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  font-weight: 700;
+  padding: 0.75rem 1rem 0.25rem;
+  color: #1f6f4a;
+}
+
+nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0 0.5rem 0.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+nav a {
+  white-space: nowrap;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #444;
+  font-size: 0.85rem;
+}
+
+nav a.active {
+  background: #1f6f4a;
+  color: white;
+  font-weight: 600;
+}
+
+.app-content {
+  flex: 1;
+  padding: 1rem;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}

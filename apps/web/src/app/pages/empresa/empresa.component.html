@@ -1,0 +1,62 @@
+<h1>Empresa</h1>
+<p>Regime tributário — define como os tributos entram no cálculo de preço.</p>
+
+<div class="card">
+  <form [formGroup]="form" (ngSubmit)="salvar()">
+    <div class="grid-form">
+      <div>
+        <label>Regime tributário</label>
+        <select formControlName="regimeTributario">
+          <option value="MEI">MEI</option>
+          <option value="SIMPLES_NACIONAL">Simples Nacional (ME/EPP)</option>
+        </select>
+      </div>
+
+      <ng-container *ngIf="form.value.regimeTributario === 'MEI'">
+        <div>
+          <label>Valor do DAS-MEI mensal (R$)</label>
+          <input type="number" step="0.01" formControlName="dasMeiValorMensalReais" />
+        </div>
+        <div>
+          <label>Faturamento acumulado (últimos 12 meses, R$)</label>
+          <input type="number" step="0.01" formControlName="faturamentoAcumulado12MesesReais" />
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="form.value.regimeTributario === 'SIMPLES_NACIONAL'">
+        <div>
+          <label>Anexo do Simples Nacional</label>
+          <select formControlName="anexoSimples">
+            <option value="I">Anexo I (Comércio)</option>
+            <option value="III">Anexo III (Serviços)</option>
+          </select>
+        </div>
+        <div>
+          <label>RBT12 — receita bruta últimos 12 meses (R$)</label>
+          <input type="number" step="0.01" formControlName="rbt12Reais" />
+        </div>
+      </ng-container>
+
+      <div>
+        <label>Margem líquida mínima aceitável (%) — para alertas</label>
+        <input type="number" step="0.01" formControlName="margemLiquidaMinimaAlertaPercent" />
+      </div>
+    </div>
+
+    <p class="aviso-legal" *ngIf="form.value.regimeTributario === 'MEI'">
+      O DAS-MEI é valor fixo mensal — o sistema o trata como custo fixo, não como percentual sobre a venda (esse é
+      o erro mais comum de calculadoras de preço para MEI). Consulte o valor atual no gerador de boleto do Portal
+      do Empreendedor.
+    </p>
+    <p class="aviso-legal" *ngIf="form.value.regimeTributario === 'SIMPLES_NACIONAL'">
+      MVP cobre os Anexos I e III (fórmula oficial da alíquota efetiva). Fator R, demais anexos e crédito
+      tributário de fornecedores ficam para a Fase 2.
+    </p>
+
+    <div *ngIf="erro" class="alerta alerta-critico">{{ erro }}</div>
+    <div class="alerta alerta-info" *ngIf="salvo">Dados da empresa salvos.</div>
+    <div class="linha-acoes">
+      <button type="submit" class="primario" [disabled]="form.invalid">Salvar</button>
+    </div>
+  </form>
+</div>

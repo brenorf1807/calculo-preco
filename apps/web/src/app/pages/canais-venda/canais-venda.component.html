@@ -1,0 +1,77 @@
+<h1>Canais de venda</h1>
+<p>Cada canal (loja própria, maquininha, marketplace...) tem suas próprias taxas. O sistema calcula um preço diferente para cada um.</p>
+
+<div class="card" *ngIf="canais.length">
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>% total sobre venda</th>
+        <th>Taxas fixas/pedido</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let c of canais">
+        <td>{{ c.nome }}</td>
+        <td>{{ percentualTotal(c) | number: '1.2-2' }}%</td>
+        <td>{{ c.taxasFixasPorPedido.length ? ('R$ ' + c.taxasFixasPorPedido[0].valorReais) : '—' }}</td>
+        <td class="linha-acoes">
+          <button (click)="editar(c)">Editar</button>
+          <button class="perigo" (click)="remover(c.id)">Remover</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>{{ editandoId ? 'Editar canal' : 'Novo canal de venda' }}</h2>
+  <form [formGroup]="form" (ngSubmit)="salvar()">
+    <label>Nome do canal</label>
+    <input formControlName="nome" placeholder="Ex.: Marketplace" />
+
+    <h3>Taxas percentuais (incidem sobre o preço de venda)</h3>
+    <div formArrayName="taxasPercentuais">
+      <div class="grid-form" *ngFor="let t of taxasPercentuais.controls; let i = index" [formGroupName]="i" style="margin-bottom: 0.5rem">
+        <div>
+          <label>Nome da taxa</label>
+          <input formControlName="nome" placeholder="Ex.: Taxa da maquininha" />
+        </div>
+        <div>
+          <label>Percentual (%)</label>
+          <input type="number" step="0.01" formControlName="percentual" />
+        </div>
+        <div style="display: flex; align-items: flex-end">
+          <button type="button" class="perigo" (click)="removerTaxaPercentual(i)">Remover</button>
+        </div>
+      </div>
+    </div>
+    <button type="button" (click)="adicionarTaxaPercentual()">+ Adicionar taxa percentual</button>
+
+    <h3 style="margin-top: 1rem">Taxas fixas por pedido (ex.: R$5 por venda no marketplace)</h3>
+    <p class="aviso-legal">Não são percentuais — entram como custo direto, não no percentual sobre a venda.</p>
+    <div formArrayName="taxasFixasPorPedido">
+      <div class="grid-form" *ngFor="let t of taxasFixasPorPedido.controls; let i = index" [formGroupName]="i" style="margin-bottom: 0.5rem">
+        <div>
+          <label>Nome da taxa</label>
+          <input formControlName="nome" placeholder="Ex.: Taxa fixa por pedido" />
+        </div>
+        <div>
+          <label>Valor (R$)</label>
+          <input type="number" step="0.01" formControlName="valorReais" />
+        </div>
+        <div style="display: flex; align-items: flex-end">
+          <button type="button" class="perigo" (click)="removerTaxaFixa(i)">Remover</button>
+        </div>
+      </div>
+    </div>
+    <button type="button" (click)="adicionarTaxaFixa()">+ Adicionar taxa fixa por pedido</button>
+
+    <div *ngIf="erro" class="alerta alerta-critico" style="margin-top: 1rem">{{ erro }}</div>
+    <div class="linha-acoes">
+      <button type="submit" class="primario" [disabled]="form.invalid">{{ editandoId ? 'Salvar alterações' : 'Adicionar canal' }}</button>
+      <button type="button" *ngIf="editandoId" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>
