@@ -44,20 +44,11 @@ npm run dev:web                # compila o engine e sobe o Angular em http://loc
 
 Na primeira execução, faça login com um usuário criado no Console do Firebase (ver "Criando seu login" abaixo) — sem backend, não existe seed de dados de demonstração automático; cadastre insumos/fichas/canais pela própria interface.
 
-## Segurança — leia antes de publicar
+## Segurança e deploy — leia antes de publicar
 
-Sem backend, **`firestore.rules` é a única coisa protegendo os dados** (insumos, custos, margens do seu negócio). O arquivo na raiz do projeto já isola tudo por usuário autenticado (`users/{uid}/...`), mas ele só faz efeito depois de publicado:
+Sem backend, **`firestore.rules` é a única coisa protegendo os dados** (insumos, custos, margens do seu negócio) — a `apiKey` do Firebase em `apps/web/src/app/firebase.ts` não é segredo (é assim que todo app web do Firebase funciona); a proteção real são as regras + o login.
 
-1. Console do Firebase → **Firestore Database → Regras** → cole o conteúdo de `firestore.rules` → **Publicar**. (Ou, com o Firebase CLI: `firebase deploy --only firestore:rules`, usando o `firebase.json` já incluído.)
-2. **Crie seu login**: Console do Firebase → **Authentication → Users → Add user** → informe e-mail e senha. Não existe tela de auto-cadastro no app (decisão deliberada — ver `docs/DECISOES.md`), então o primeiro (e único, no MVP) usuário é criado por você direto no console.
-3. A `apiKey` e demais campos em `apps/web/src/app/firebase.ts` **não são segredo** — é assim que qualquer app web do Firebase funciona, a proteção real é a regra do passo 1 + o login do passo 2.
-
-## Publicando (Firebase Hosting)
-
-```bash
-npm run build:web                        # gera apps/web/dist/web/browser
-npx firebase-tools deploy --only hosting # requer login (npx firebase-tools login) e o projeto configurado
-```
+Passo a passo completo de como publicar as regras, criar seu login, e publicar o app (manual ou via GitHub Actions, que já vem configurado em `.github/workflows/deploy-firebase.yml`) está em **[`docs/DEPLOY.md`](docs/DEPLOY.md)**.
 
 ## Escopo desta entrega (Fase 1 / MVP)
 
