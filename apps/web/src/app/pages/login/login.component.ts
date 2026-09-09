@@ -36,4 +36,19 @@ export class LoginComponent {
       })
       .finally(() => (this.entrando = false));
   }
+
+  entrarComGoogle(): void {
+    this.erro = null;
+    this.entrando = true;
+    this.auth
+      .loginWithGoogle()
+      .then(() => this.router.navigateByUrl('/calculo'))
+      .catch((err) => {
+        this.erro =
+          err?.code === 'auth/operation-not-allowed'
+            ? 'Login com Google ainda não foi habilitado no Firebase (Authentication → Sign-in method).'
+            : 'Não foi possível entrar com o Google.';
+      })
+      .finally(() => (this.entrando = false));
+  }
 }

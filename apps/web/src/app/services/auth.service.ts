@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable, shareReplay } from 'rxjs';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, UserCredential } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, UserCredential } from 'firebase/auth';
 import { auth } from '../firebase';
+
+const googleProvider = new GoogleAuthProvider();
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -20,6 +22,11 @@ export class AuthService {
 
   login(email: string, password: string): Promise<UserCredential> {
     return signInWithEmailAndPassword(auth, email, password);
+  }
+
+  /** Requer o provedor "Google" habilitado em Authentication → Sign-in method no Console do Firebase. */
+  loginWithGoogle(): Promise<UserCredential> {
+    return signInWithPopup(auth, googleProvider);
   }
 
   logout(): Promise<void> {

@@ -8,15 +8,27 @@
       <label>Senha</label>
       <input type="password" formControlName="senha" autocomplete="current-password" />
 
-      <div *ngIf="erro" class="alerta alerta-critico" style="margin-top: 1rem">{{ erro }}</div>
       <div class="linha-acoes">
         <button type="submit" class="primario" [disabled]="form.invalid || entrando" style="width: 100%">
           {{ entrando ? 'Entrando...' : 'Entrar' }}
         </button>
       </div>
     </form>
+
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin: 1rem 0; color: #999; font-size: 0.8rem">
+      <div style="flex: 1; height: 1px; background: #dcdcd6"></div>
+      ou
+      <div style="flex: 1; height: 1px; background: #dcdcd6"></div>
+    </div>
+
+    <button type="button" (click)="entrarComGoogle()" [disabled]="entrando" style="width: 100%">
+      {{ entrando ? 'Entrando...' : 'Entrar com Google' }}
+    </button>
+
+    <div *ngIf="erro" class="alerta alerta-critico" style="margin-top: 1rem">{{ erro }}</div>
   </div>
   <p class="aviso-legal" style="text-align: center">
-    Sem conta ainda? Peça para criar seu acesso no Console do Firebase (Authentication → Users).
+    Sem conta de e-mail/senha ainda? Peça para criar seu acesso no Console do Firebase (Authentication → Users). O
+    login com Google não precisa disso.
   </p>
 </div>
