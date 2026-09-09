@@ -131,7 +131,12 @@ export interface ResultadoPrecoPorCanalDTO {
 }
 
 export interface CalculoPrecoRequest {
-  fichaTecnicaId: string;
+  /** Informe exatamente um dos dois: fichaTecnicaId (produto salvo) OU insumoId (revenda rápida, sem salvar ficha). */
+  fichaTecnicaId?: string;
+  /** Revenda rápida: precifica um insumo diretamente, sem precisar cadastrar uma ficha técnica pra ele. */
+  insumoId?: string;
+  /** Só usado com insumoId. Quantidade do insumo (na unidade de consumo dele) vendida por unidade — default 1. */
+  quantidadePorUnidade?: number;
   canalIds: string[];
   volumeEstimadoMensal: number;
   criterioRateio: 'volume' | 'tempo_producao';

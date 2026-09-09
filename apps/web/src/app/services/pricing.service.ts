@@ -20,7 +20,14 @@ import {
 } from '@calculo-preco/engine';
 import { ApiService } from './api.service';
 import { insumoParaDominio, fichaTecnicaParaDominio, canalVendaParaDominio } from './engine-mappers';
-import { CalculoPrecoRequest, EngenhariaReversaRequest, EngenhariaReversaResultado, Empresa, ResultadoPrecoPorCanalDTO } from '../models/models';
+import {
+  CalculoPrecoRequest,
+  EngenhariaReversaRequest,
+  EngenhariaReversaResultado,
+  Empresa,
+  FichaTecnica,
+  ResultadoPrecoPorCanalDTO,
+} from '../models/models';
 
 const taxRuleRepository = new InMemoryTaxRuleRepository();
 
@@ -91,13 +98,34 @@ export class PricingService {
       throw new EmpresaNaoConfiguradaError();
     }
 
-    const todasFichas = await firstValueFrom(this.api.listarFichasTecnicas());
-    const fichaSalva = todasFichas.find((f) => f.id === input.fichaTecnicaId);
-    if (!fichaSalva) throw new Error(`Ficha técnica "${input.fichaTecnicaId}" não encontrada.`);
+    const [todasFichas, todosInsumos] = await Promise.all([
+      firstValueFrom(this.api.listarFichasTecnicas()),
+      firstValueFrom(this.api.listarInsumos()),
+    ]);
+
+    let fichaSalva: FichaTecnica;
+    if (input.insumoId) {
+      // Revenda rápida: precifica o insumo direto, sem precisar de uma ficha técnica salva.
+      const insumoAlvo = todosInsumos.find((i) => i.id === input.insumoId);
+      if (!insumoAlvo) throw new Error(`Insumo "${input.insumoId}" não encontrado.`);
+      fichaSalva = {
+        id: `insumo:${insumoAlvo.id}`,
+        nome: insumoAlvo.nome,
+        tipo: 'revenda',
+        itens: [{ insumoId: insumoAlvo.id, quantidade: input.quantidadePorUnidade ?? 1 }],
+        rendimento: 1,
+        tempoProducaoMinutos: 0,
+      };
+    } else if (input.fichaTecnicaId) {
+      const encontrada = todasFichas.find((f) => f.id === input.fichaTecnicaId);
+      if (!encontrada) throw new Error(`Ficha técnica "${input.fichaTecnicaId}" não encontrada.`);
+      fichaSalva = encontrada;
+    } else {
+      throw new Error('Informe uma ficha técnica ou um insumo para calcular o preço.');
+    }
     const ficha = fichaTecnicaParaDominio(fichaSalva);
 
     const insumoIdsNaFicha = new Set(fichaSalva.itens.map((i) => i.insumoId));
-    const todosInsumos = await firstValueFrom(this.api.listarInsumos());
     const insumosSalvos = todosInsumos.filter((i) => insumoIdsNaFicha.has(i.id));
     const insumosPorId = new Map(insumosSalvos.map((r) => [r.id, insumoParaDominio(r)]));
 

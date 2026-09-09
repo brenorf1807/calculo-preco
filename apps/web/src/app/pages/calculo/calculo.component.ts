@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { PricingService } from '../../services/pricing.service';
-import { FichaTecnica, CanalVenda, ResultadoPrecoPorCanalDTO } from '../../models/models';
+import { FichaTecnica, Insumo, CanalVenda, ResultadoPrecoPorCanalDTO } from '../../models/models';
 
 interface SegmentoComposicao {
   chave: string;
@@ -48,6 +48,7 @@ export class CalculoComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   fichas: FichaTecnica[] = [];
+  insumos: Insumo[] = [];
   canais: CanalVenda[] = [];
   resultados: ResultadoPrecoPorCanalDTO[] | null = null;
   erro: string | null = null;
@@ -55,7 +56,10 @@ export class CalculoComponent implements OnInit {
   memorialAbertoPara: string | null = null;
 
   form = this.fb.nonNullable.group({
-    fichaTecnicaId: ['', Validators.required],
+    modoProduto: ['ficha' as 'ficha' | 'insumo', Validators.required],
+    fichaTecnicaId: [''],
+    insumoId: [''],
+    quantidadePorUnidade: [1, [Validators.min(0.0001)]],
     canalIds: this.fb.nonNullable.control<string[]>([]),
     volumeEstimadoMensal: [100, [Validators.required, Validators.min(1)]],
     criterioRateio: ['volume' as 'volume' | 'tempo_producao', Validators.required],
@@ -64,8 +68,17 @@ export class CalculoComponent implements OnInit {
     custoHoraReais: [20, Validators.min(0)],
   });
 
+  get modoInsumo(): boolean {
+    return this.form.controls.modoProduto.value === 'insumo';
+  }
+
+  unidadeConsumoDoInsumo(insumoId: string): string {
+    return this.insumos.find((i) => i.id === insumoId)?.unidadeConsumo ?? '';
+  }
+
   ngOnInit(): void {
     this.api.listarFichasTecnicas().subscribe((f) => (this.fichas = f));
+    this.api.listarInsumos().subscribe((i) => (this.insumos = i));
     this.api.listarCanaisVenda().subscribe((c) => (this.canais = c));
   }
 
@@ -79,17 +92,23 @@ export class CalculoComponent implements OnInit {
   }
 
   calcular(): void {
-    if (this.form.invalid || this.form.value.canalIds?.length === 0) {
-      this.erro = 'Selecione a ficha técnica e ao menos um canal de venda.';
+    const v = this.form.getRawValue();
+    const produtoValido = v.modoProduto === 'insumo' ? !!v.insumoId : !!v.fichaTecnicaId;
+    if (this.form.invalid || !produtoValido || v.canalIds.length === 0) {
+      this.erro =
+        v.modoProduto === 'insumo'
+          ? 'Selecione o insumo e ao menos um canal de venda.'
+          : 'Selecione a ficha técnica e ao menos um canal de venda.';
       return;
     }
     this.erro = null;
     this.carregando = true;
     this.resultados = null;
-    const v = this.form.getRawValue();
     this.pricing
       .calcularPreco({
-        fichaTecnicaId: v.fichaTecnicaId,
+        fichaTecnicaId: v.modoProduto === 'ficha' ? v.fichaTecnicaId : undefined,
+        insumoId: v.modoProduto === 'insumo' ? v.insumoId : undefined,
+        quantidadePorUnidade: v.modoProduto === 'insumo' ? v.quantidadePorUnidade : undefined,
         canalIds: v.canalIds,
         volumeEstimadoMensal: v.volumeEstimadoMensal,
         criterioRateio: v.criterioRateio,

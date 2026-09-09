@@ -1,20 +1,38 @@
 <h1>Calcular preço de venda</h1>
 <p>Preço de venda = (custo direto + custo fixo rateado) ÷ (1 − %tributos − %custos variáveis − %margem desejada).</p>
 
-<div class="alerta alerta-atencao" *ngIf="!fichas.length || !canais.length">
-  Cadastre ao menos uma <a routerLink="/fichas-tecnicas">ficha técnica</a> e um
-  <a routerLink="/canais-venda">canal de venda</a> antes de calcular.
+<div class="alerta alerta-atencao" *ngIf="!canais.length">
+  Cadastre ao menos um <a routerLink="/canais-venda">canal de venda</a> antes de calcular.
 </div>
 
 <div class="card">
   <form [formGroup]="form" (ngSubmit)="calcular()">
+    <label>O que você quer precificar?</label>
+    <div class="linha-acoes" style="margin-bottom: 1rem">
+      <button type="button" [class.primario]="!modoInsumo" (click)="form.controls.modoProduto.setValue('ficha')">Ficha técnica</button>
+      <button type="button" [class.primario]="modoInsumo" (click)="form.controls.modoProduto.setValue('insumo')">
+        Insumo direto (revenda rápida)
+      </button>
+    </div>
+
     <div class="grid-form">
-      <div>
+      <div *ngIf="!modoInsumo">
         <label>Ficha técnica (produto)</label>
         <select formControlName="fichaTecnicaId">
           <option value="" disabled>Selecione...</option>
           <option *ngFor="let f of fichas" [value]="f.id">{{ f.nome }}</option>
         </select>
+      </div>
+      <div *ngIf="modoInsumo">
+        <label>Insumo</label>
+        <select formControlName="insumoId">
+          <option value="" disabled>Selecione...</option>
+          <option *ngFor="let i of insumos" [value]="i.id">{{ i.nome }}</option>
+        </select>
+      </div>
+      <div *ngIf="modoInsumo">
+        <label>Quantidade vendida por unidade ({{ unidadeConsumoDoInsumo(form.value.insumoId ?? '') || 'unid. de consumo do insumo' }})</label>
+        <input type="number" step="0.0001" formControlName="quantidadePorUnidade" />
       </div>
       <div>
         <label>Volume estimado no mês (unidades)</label>
@@ -32,6 +50,10 @@
         <input type="number" step="0.01" formControlName="percentualMargemLiquidaDesejada" />
       </div>
     </div>
+    <p class="aviso-legal" *ngIf="modoInsumo">
+      Ex.: vende a peça inteira como comprou → quantidade 1. Vende porcionado (ex.: bifes de 200g de um insumo
+      cadastrado em kg) → quantidade 0,2.
+    </p>
 
     <h3>Canais de venda</h3>
     <div class="grid-form">
