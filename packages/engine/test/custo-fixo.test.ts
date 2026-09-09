@@ -36,6 +36,15 @@ describe("CustoFixoMensal", () => {
   it("rejeita rateio com volume <= 0", () => {
     expect(() => custoFixo.rateioPorVolume(new Decimal(0))).toThrow();
   });
+
+  it("calcula o percentual de custo fixo sobre o faturamento mensal estimado", () => {
+    // 1.100 de custo fixo / 11.000 de faturamento estimado = 10%
+    expect(custoFixo.percentualSobreFaturamento(Money.fromReais(11_000)).toDisplayString()).toBe("10.00%");
+  });
+
+  it("rejeita percentual sobre faturamento <= 0", () => {
+    expect(() => custoFixo.percentualSobreFaturamento(Money.zero())).toThrow();
+  });
 });
 
 describe("calcularPontoEquilibrio", () => {

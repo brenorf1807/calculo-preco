@@ -75,6 +75,14 @@ export interface Empresa {
   dasMeiValorMensalReais?: number;
   faturamentoAcumulado12MesesReais?: number;
   margemLiquidaMinimaAlertaPercent?: number;
+  /**
+   * Faturamento mensal estimado da empresa toda (não de um produto). Usado
+   * para transformar o total de custos fixos num percentual único, aplicado
+   * automaticamente em todo cálculo de preço — evita ratear por volume de
+   * cada item (que exige informar volume toda vez e, se feito produto a
+   * produto, soma o custo fixo inteiro várias vezes).
+   */
+  faturamentoMensalEstimadoReais?: number;
 }
 
 export interface MoneyJSON {
@@ -107,12 +115,6 @@ export interface ComposicaoPrecoDTO {
   lucroLiquido: number;
 }
 
-export interface SensibilidadeVolumeDTO {
-  percentualDoVolumeEstimado: number;
-  volume: number;
-  custoFixoRateadoPorUnidade: MoneyJSON;
-}
-
 export interface ResultadoPrecoPorCanalDTO {
   canalId: string;
   canalNome: string;
@@ -121,9 +123,9 @@ export interface ResultadoPrecoPorCanalDTO {
   lucroLiquidoUnitario: MoneyJSON;
   markupEquivalente: number;
   margemContribuicao: number;
+  percentualCustoFixoAplicado: number;
   composicao: ComposicaoPrecoDTO;
   pontoEquilibrio: { unidades: number; faturamento: MoneyJSON } | null;
-  sensibilidadeVolume: SensibilidadeVolumeDTO[];
   alertasTributarios: AlertaTributario[];
   alertaMargemMinima: string | null;
   memorial: LinhaMemorial[];
@@ -138,10 +140,6 @@ export interface CalculoPrecoRequest {
   /** Só usado com insumoId. Quantidade do insumo (na unidade de consumo dele) vendida por unidade — default 1. */
   quantidadePorUnidade?: number;
   canalIds: string[];
-  volumeEstimadoMensal: number;
-  criterioRateio: 'volume' | 'tempo_producao';
-  /** Só usado quando criterioRateio = "tempo_producao": volume mensal estimado dos DEMAIS produtos do mix. */
-  mixParaRateioPorTempo?: { fichaTecnicaId: string; volumeEstimadoMensal: number }[];
   percentualMargemLiquidaDesejada: number;
   custoMaoDeObra?: {
     modo: 'manual' | 'derivado';
@@ -157,8 +155,6 @@ export interface EngenhariaReversaRequest {
   fichaTecnicaId: string;
   canalId: string;
   precoMercado: number;
-  volumeEstimadoMensal: number;
-  criterioRateio: 'volume' | 'tempo_producao';
   dataReferencia?: string;
 }
 

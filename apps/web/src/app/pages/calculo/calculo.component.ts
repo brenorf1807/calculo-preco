@@ -54,6 +54,8 @@ export class CalculoComponent implements OnInit {
   erro: string | null = null;
   carregando = false;
   memorialAbertoPara: string | null = null;
+  /** null enquanto carrega; depois true/false conforme a empresa tem faturamentoMensalEstimadoReais configurado. */
+  faturamentoEstimadoConfigurado: boolean | null = null;
 
   form = this.fb.nonNullable.group({
     modoProduto: ['ficha' as 'ficha' | 'insumo', Validators.required],
@@ -61,8 +63,6 @@ export class CalculoComponent implements OnInit {
     insumoId: [''],
     quantidadePorUnidade: [1, [Validators.min(0.0001)]],
     canalIds: this.fb.nonNullable.control<string[]>([]),
-    volumeEstimadoMensal: [100, [Validators.required, Validators.min(1)]],
-    criterioRateio: ['volume' as 'volume' | 'tempo_producao', Validators.required],
     percentualMargemLiquidaDesejada: [15, [Validators.required, Validators.min(0), Validators.max(99.99)]],
     incluirMaoDeObra: [false],
     custoHoraReais: [20, Validators.min(0)],
@@ -80,6 +80,10 @@ export class CalculoComponent implements OnInit {
     this.api.listarFichasTecnicas().subscribe((f) => (this.fichas = f));
     this.api.listarInsumos().subscribe((i) => (this.insumos = i));
     this.api.listarCanaisVenda().subscribe((c) => (this.canais = c));
+    this.api.obterEmpresa().subscribe({
+      next: (empresa) => (this.faturamentoEstimadoConfigurado = !!empresa.faturamentoMensalEstimadoReais && empresa.faturamentoMensalEstimadoReais > 0),
+      error: () => (this.faturamentoEstimadoConfigurado = false),
+    });
   }
 
   alternarCanal(canalId: string, marcado: boolean): void {
@@ -110,8 +114,6 @@ export class CalculoComponent implements OnInit {
         insumoId: v.modoProduto === 'insumo' ? v.insumoId : undefined,
         quantidadePorUnidade: v.modoProduto === 'insumo' ? v.quantidadePorUnidade : undefined,
         canalIds: v.canalIds,
-        volumeEstimadoMensal: v.volumeEstimadoMensal,
-        criterioRateio: v.criterioRateio,
         percentualMargemLiquidaDesejada: v.percentualMargemLiquidaDesejada,
         custoMaoDeObra: v.incluirMaoDeObra ? { modo: 'manual', custoHoraReais: v.custoHoraReais } : undefined,
       })

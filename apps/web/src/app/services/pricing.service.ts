@@ -7,7 +7,6 @@ import {
   MemorialCalculo,
   CustoFixoMensal,
   DespesaFixa as DespesaFixaDominio,
-  analiseSensibilidadeVolume,
   calcularPontoEquilibrio,
   calcularCustoHoraDerivado,
   calcularCustoMaoDeObraPorUnidade,
@@ -35,6 +34,15 @@ export class EmpresaNaoConfiguradaError extends Error {
   constructor() {
     super('Empresa ainda não configurada. Cadastre o regime tributário na tela "Empresa" antes de calcular preços.');
     this.name = 'EmpresaNaoConfiguradaError';
+  }
+}
+
+export class FaturamentoEstimadoNaoConfiguradoError extends Error {
+  constructor() {
+    super(
+      'Informe o "Faturamento mensal estimado" na tela Custos Fixos (ou Empresa) antes de calcular preços — é ele que transforma seus custos fixos num percentual aplicado automaticamente.',
+    );
+    this.name = 'FaturamentoEstimadoNaoConfiguradoError';
   }
 }
 
@@ -84,6 +92,20 @@ export class PricingService {
     }
 
     return new CustoFixoMensal(despesas);
+  }
+
+  /**
+   * Custo fixo total mensal ÷ faturamento mensal estimado da empresa toda —
+   * o mesmo percentual entra em TODO cálculo de preço, de qualquer produto
+   * ou canal. Nada de volume por item: rateio por volume exige informar
+   * volume a cada cálculo e, se aplicado produto a produto, conta o custo
+   * fixo inteiro várias vezes.
+   */
+  private percentualCustoFixo(empresa: Empresa, custoFixoMensal: CustoFixoMensal): Percentage {
+    if (!empresa.faturamentoMensalEstimadoReais || empresa.faturamentoMensalEstimadoReais <= 0) {
+      throw new FaturamentoEstimadoNaoConfiguradoError();
+    }
+    return custoFixoMensal.percentualSobreFaturamento(Money.fromReais(empresa.faturamentoMensalEstimadoReais));
   }
 
   calcularPreco(input: CalculoPrecoRequest): Observable<ResultadoPrecoPorCanalDTO[]> {
@@ -163,27 +185,7 @@ export class PricingService {
     const custoDiretoUnitario = Money.fromReais(custoMateriaPrima.add(custoEmbalagem).add(custoMaoDeObraUnitario));
 
     const custoFixoMensal = await this.construirCustoFixoMensal(empresa);
-    const volumeEstimadoMensal = new Decimal(input.volumeEstimadoMensal);
-
-    let custoFixoRateadoUnitario: Money;
-    if (input.criterioRateio === 'tempo_producao') {
-      const outrasFichas = (input.mixParaRateioPorTempo ?? [])
-        .filter((m) => m.fichaTecnicaId !== ficha.id)
-        .map((m) => {
-          const outraFichaSalva = todasFichas.find((f) => f.id === m.fichaTecnicaId);
-          if (!outraFichaSalva) throw new Error(`Ficha técnica "${m.fichaTecnicaId}" do mix não encontrada.`);
-          const outraFicha = fichaTecnicaParaDominio(outraFichaSalva);
-          return {
-            produtoId: outraFicha.id,
-            tempoProducaoMinutosPorUnidade: outraFicha.tempoProducaoPorUnidadeMinutos(),
-            volumeEstimadoMensal: new Decimal(m.volumeEstimadoMensal),
-          };
-        });
-      const mix = [{ produtoId: ficha.id, tempoProducaoMinutosPorUnidade: ficha.tempoProducaoPorUnidadeMinutos(), volumeEstimadoMensal }, ...outrasFichas];
-      custoFixoRateadoUnitario = custoFixoMensal.rateioPorTempoProducao(mix).get(ficha.id)!;
-    } else {
-      custoFixoRateadoUnitario = custoFixoMensal.rateioPorVolume(volumeEstimadoMensal);
-    }
+    const percentualCustoFixo = this.percentualCustoFixo(empresa, custoFixoMensal);
 
     const todosCanais = await firstValueFrom(this.api.listarCanaisVenda());
     const canaisSalvos = input.canalIds.map((canalId) => {
@@ -206,15 +208,13 @@ export class PricingService {
           regime,
           dataReferencia,
           custoDiretoUnitario,
-          custoFixoRateadoUnitario,
+          percentualCustoFixo,
           percentualCustosVariaveisCanal: canal.percentualTotalSobreVenda(),
           custosFixosPorPedidoCanal: canal.totalTaxasFixasPorPedido(),
           percentualMargemLiquidaDesejada,
         };
       }),
     );
-
-    const sensibilidadeVolume = analiseSensibilidadeVolume(custoFixoMensal, volumeEstimadoMensal);
 
     return resultadosPorCanal.map(({ canalId, canalNome, resultado }) => {
       const canalSalvo = canaisSalvos.find((c) => c.id === canalId)!;
@@ -229,7 +229,7 @@ export class PricingService {
         materiaPrima: custoMateriaPrima.toDecimalPlaces(4).toNumber(),
         embalagem: custoEmbalagem.toDecimalPlaces(4).toNumber(),
         maoDeObra: custoMaoDeObraUnitario.toDecimalPlaces(4).toNumber(),
-        custoFixoRateado: custoFixoRateadoUnitario.toDecimal().toDecimalPlaces(4).toNumber(),
+        custoFixoRateado: precoVendaDecimal.mul(percentualCustoFixo.toFraction()).toDecimalPlaces(4).toNumber(),
         taxasFixasPorPedido: canal.totalTaxasFixasPorPedido().toDecimal().toDecimalPlaces(4).toNumber(),
         tributos: precoVendaDecimal.mul(percentualTributos.toFraction()).toDecimalPlaces(4).toNumber(),
         custosVariaveisCanal: precoVendaDecimal.mul(canal.percentualTotalSobreVenda().toFraction()).toDecimalPlaces(4).toNumber(),
@@ -256,15 +256,11 @@ export class PricingService {
         lucroLiquidoUnitario: resultado.lucroLiquidoUnitario.toJSON(),
         markupEquivalente: resultado.markupEquivalente.toNumber(),
         margemContribuicao: resultado.margemContribuicao.toNumber(),
+        percentualCustoFixoAplicado: percentualCustoFixo.toNumber(),
         composicao,
         pontoEquilibrio: pontoEquilibrio
           ? { unidades: pontoEquilibrio.unidades.toNumber(), faturamento: pontoEquilibrio.faturamento.toJSON() }
           : null,
-        sensibilidadeVolume: sensibilidadeVolume.map((s) => ({
-          percentualDoVolumeEstimado: s.percentualDoVolumeEstimado,
-          volume: s.volume.toNumber(),
-          custoFixoRateadoPorUnidade: s.custoFixoRateadoPorUnidade.toJSON(),
-        })),
         alertasTributarios: resultado.alertasTributarios,
         alertaMargemMinima,
         memorial: resultado.memorial,
@@ -298,7 +294,7 @@ export class PricingService {
     const custoDiretoUnitario = Money.fromReais(ficha.custoInsumosPorUnidade(insumosPorId));
 
     const custoFixoMensal = await this.construirCustoFixoMensal(empresa);
-    const custoFixoRateadoUnitario = custoFixoMensal.rateioPorVolume(new Decimal(input.volumeEstimadoMensal));
+    const percentualCustoFixo = this.percentualCustoFixo(empresa, custoFixoMensal);
 
     const todosCanais = await firstValueFrom(this.api.listarCanaisVenda());
     const canalSalvo = todosCanais.find((c) => c.id === input.canalId);
@@ -312,8 +308,8 @@ export class PricingService {
     const resultado = calcularMargemRealDadoPreco({
       precoMercado: Money.fromReais(input.precoMercado),
       custoDiretoUnitario,
-      custoFixoRateadoUnitario,
       custosFixosPorPedidoUnitario: canal.totalTaxasFixasPorPedido(),
+      percentualCustoFixo,
       percentualTributos: resultadoRegime.percentualSobreVenda,
       percentualCustosVariaveis: canal.percentualTotalSobreVenda(),
     });

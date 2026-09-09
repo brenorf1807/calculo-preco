@@ -1,12 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-empresa',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './empresa.component.html',
 })
 export class EmpresaComponent implements OnInit {
@@ -23,6 +24,7 @@ export class EmpresaComponent implements OnInit {
     dasMeiValorMensalReais: [76.9, Validators.min(0)],
     faturamentoAcumulado12MesesReais: [0, Validators.min(0)],
     margemLiquidaMinimaAlertaPercent: [10, [Validators.min(0), Validators.max(100)]],
+    faturamentoMensalEstimadoReais: [0, Validators.min(0)],
   });
 
   ngOnInit(): void {
@@ -35,6 +37,7 @@ export class EmpresaComponent implements OnInit {
           dasMeiValorMensalReais: empresa.dasMeiValorMensalReais ?? 76.9,
           faturamentoAcumulado12MesesReais: empresa.faturamentoAcumulado12MesesReais ?? 0,
           margemLiquidaMinimaAlertaPercent: empresa.margemLiquidaMinimaAlertaPercent ?? 10,
+          faturamentoMensalEstimadoReais: empresa.faturamentoMensalEstimadoReais ?? 0,
         }),
       error: () => {
         /* empresa ainda não configurada — mantém os valores padrão do formulário */

@@ -1,8 +1,12 @@
 <h1>Calcular preço de venda</h1>
-<p>Preço de venda = (custo direto + custo fixo rateado) ÷ (1 − %tributos − %custos variáveis − %margem desejada).</p>
+<p>Preço de venda = custo direto ÷ (1 − %tributos − %custos variáveis do canal − %custo fixo − %margem desejada).</p>
 
 <div class="alerta alerta-atencao" *ngIf="!canais.length">
   Cadastre ao menos um <a routerLink="/canais-venda">canal de venda</a> antes de calcular.
+</div>
+<div class="alerta alerta-atencao" *ngIf="canais.length && faturamentoEstimadoConfigurado === false">
+  Falta configurar o <a routerLink="/custos-fixos">faturamento mensal estimado</a> — é ele que vira o percentual de
+  custo fixo aplicado automaticamente no cálculo.
 </div>
 
 <div class="card">
@@ -33,17 +37,6 @@
       <div *ngIf="modoInsumo">
         <label>Quantidade vendida por unidade ({{ unidadeConsumoDoInsumo(form.value.insumoId ?? '') || 'unid. de consumo do insumo' }})</label>
         <input type="number" step="0.0001" formControlName="quantidadePorUnidade" />
-      </div>
-      <div>
-        <label>Volume estimado no mês (unidades)</label>
-        <input type="number" formControlName="volumeEstimadoMensal" />
-      </div>
-      <div>
-        <label>Critério de rateio do custo fixo</label>
-        <select formControlName="criterioRateio">
-          <option value="volume">Volume simples</option>
-          <option value="tempo_producao">Proporcional ao tempo de produção</option>
-        </select>
       </div>
       <div>
         <label>Margem líquida desejada (%)</label>
@@ -88,7 +81,8 @@
   <p style="margin-top: 0.25rem">
     Lucro líquido: R$ {{ r.lucroLiquidoUnitario.reais | number: '1.2-2' }} por unidade &nbsp;•&nbsp; Markup:
     {{ r.markupEquivalente | number: '1.2-2' }}x &nbsp;•&nbsp; Margem de contribuição:
-    {{ r.margemContribuicao * 100 | number: '1.1-1' }}%
+    {{ r.margemContribuicao * 100 | number: '1.1-1' }}% &nbsp;•&nbsp; Custo fixo aplicado:
+    {{ r.percentualCustoFixoAplicado * 100 | number: '1.2-2' }}%
   </p>
 
   <div class="alerta" [ngClass]="'alerta-' + a.nivel" *ngFor="let a of r.alertasTributarios">{{ a.mensagem }}</div>
@@ -115,24 +109,6 @@
     {{ r.pontoEquilibrio.unidades | number: '1.0-1' }} unidades/mês (R$ {{ r.pontoEquilibrio.faturamento.reais | number: '1.2-2' }} de faturamento)
   </p>
   <p *ngIf="!r.pontoEquilibrio">Não foi possível calcular (margem de contribuição não positiva).</p>
-
-  <h3>Sensibilidade ao volume</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Cenário</th>
-        <th>Volume</th>
-        <th>Custo fixo rateado/unid.</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let s of r.sensibilidadeVolume">
-        <td>{{ s.percentualDoVolumeEstimado * 100 | number: '1.0-0' }}%</td>
-        <td>{{ s.volume | number: '1.0-1' }}</td>
-        <td>R$ {{ s.custoFixoRateadoPorUnidade.reais | number: '1.2-2' }}</td>
-      </tr>
-    </tbody>
-  </table>
 
   <button type="button" (click)="alternarMemorial(r.canalId)" style="margin-top: 0.75rem">
     {{ memorialAbertoPara === r.canalId ? 'Ocultar memorial de cálculo' : 'Ver memorial de cálculo' }}

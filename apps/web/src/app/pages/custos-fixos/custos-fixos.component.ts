@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { DespesaFixa } from '../../models/models';
+import { DespesaFixa, Empresa } from '../../models/models';
 
 @Component({
   selector: 'app-custos-fixos',
@@ -18,18 +18,41 @@ export class CustosFixosComponent implements OnInit {
   editandoId: string | null = null;
   erro: string | null = null;
 
+  empresaAtual: Empresa | null = null;
+  erroFaturamento: string | null = null;
+  faturamentoSalvo = false;
+
   form = this.fb.nonNullable.group({
     nome: ['', Validators.required],
     categoria: ['infraestrutura', Validators.required],
     valorMensalReais: [0, [Validators.required, Validators.min(0)]],
   });
 
+  faturamentoForm = this.fb.nonNullable.group({
+    faturamentoMensalEstimadoReais: [0, [Validators.required, Validators.min(0.01)]],
+  });
+
   ngOnInit(): void {
     this.carregar();
+    this.api.obterEmpresa().subscribe({
+      next: (empresa) => {
+        this.empresaAtual = empresa;
+        this.faturamentoForm.patchValue({ faturamentoMensalEstimadoReais: empresa.faturamentoMensalEstimadoReais ?? 0 });
+      },
+      error: () => {
+        /* empresa ainda não configurada — o formulário de faturamento avisa isso ao salvar */
+      },
+    });
   }
 
   get totalMensal(): number {
     return this.despesas.reduce((acc, d) => acc + d.valorMensalReais, 0);
+  }
+
+  get percentualCustoFixo(): number | null {
+    const faturamento = this.empresaAtual?.faturamentoMensalEstimadoReais;
+    if (!faturamento || faturamento <= 0) return null;
+    return (this.totalMensal / faturamento) * 100;
   }
 
   carregar(): void {
@@ -63,5 +86,26 @@ export class CustosFixosComponent implements OnInit {
   remover(id: string): void {
     if (!confirm('Remover esta despesa fixa?')) return;
     this.api.removerCustoFixo(id).subscribe(() => this.carregar());
+  }
+
+  salvarFaturamento(): void {
+    if (this.faturamentoForm.invalid) return;
+    this.erroFaturamento = null;
+    this.faturamentoSalvo = false;
+    if (!this.empresaAtual) {
+      this.erroFaturamento = 'Configure primeiro o regime tributário na tela "Empresa" — o faturamento estimado é salvo junto com os outros dados da empresa.';
+      return;
+    }
+    const empresaAtualizada: Empresa = {
+      ...this.empresaAtual,
+      faturamentoMensalEstimadoReais: this.faturamentoForm.getRawValue().faturamentoMensalEstimadoReais,
+    };
+    this.api.salvarEmpresa(empresaAtualizada).subscribe({
+      next: (empresa) => {
+        this.empresaAtual = empresa;
+        this.faturamentoSalvo = true;
+      },
+      error: (err) => (this.erroFaturamento = err?.message ?? 'Erro ao salvar faturamento estimado.'),
+    });
   }
 }

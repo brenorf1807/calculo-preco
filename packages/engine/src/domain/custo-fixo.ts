@@ -1,5 +1,6 @@
 import { Decimal } from "decimal.js";
 import { Money } from "./money.js";
+import { Percentage } from "./percentage.js";
 
 export interface DespesaFixa {
   id: string;
@@ -21,6 +22,21 @@ export class CustoFixoMensal {
 
   totalMensal(): Money {
     return this.despesas.reduce((acc, d) => acc.add(d.valorMensal), Money.zero());
+  }
+
+  /**
+   * Custo fixo total mensal ÷ faturamento mensal estimado da empresa toda —
+   * método padrão de rateio deste sistema (mais simples que ratear por
+   * volume de um produto específico, que exige informar volume a cada
+   * cálculo e, se aplicado independentemente por produto, soma o custo fixo
+   * inteiro várias vezes). Esse percentual entra no denominador da fórmula
+   * de precificação junto com tributos e custos variáveis.
+   */
+  percentualSobreFaturamento(faturamentoMensalEstimado: Money): Percentage {
+    if (!faturamentoMensalEstimado.greaterThan(Money.zero())) {
+      throw new Error("Faturamento mensal estimado deve ser > 0 para calcular o percentual de custo fixo.");
+    }
+    return Percentage.fromFraction(this.totalMensal().toDecimal().div(faturamentoMensalEstimado.toDecimal()));
   }
 
   /** Critério (a): rateio simples pelo volume total estimado de produção/venda no mês. */

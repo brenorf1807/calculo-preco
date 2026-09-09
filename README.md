@@ -55,7 +55,7 @@ Passo a passo completo de como publicar as regras, criar seu login, e publicar o
 - Cadastro de insumos (com conversão de unidade de compra→consumo e perda técnica) e embalagens.
 - Ficha técnica de 1 nível (sem subprodutos ainda — isso é Fase 2), com dois tipos de produto: **receita** (combina vários insumos) e **revenda** (compra um produto pronto e revende — ex.: açougue).
 - Mão de obra direta (manual ou derivada de pró-labore ÷ horas produtivas).
-- Custo fixo mensal com rateio por volume **ou** por tempo de produção, ponto de equilíbrio e análise de sensibilidade (70%/100%/130% do volume).
+- Custo fixo mensal aplicado como **percentual sobre o faturamento estimado da empresa** (não por volume de cada item — evita ter que informar volume a cada cálculo e evita contar o custo fixo várias vezes quando se calcula mais de um produto), com ponto de equilíbrio calculado a partir do resultado.
 - Múltiplos canais de venda, cada um com taxas percentuais e taxas fixas por pedido, com um preço calculado por canal a partir da mesma ficha técnica.
 - Motor tributário: **MEI** (DAS tratado como custo fixo, nunca como percentual) e **Simples Nacional Anexos I e III** (fórmula oficial da alíquota efetiva, tabelas versionadas por vigência).
 - Fórmula de precificação "por dentro" com validação explícita de preço matematicamente impossível (nunca retorna número negativo/infinito).
