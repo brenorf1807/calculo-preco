@@ -22,9 +22,20 @@ export interface ItemFicha {
   quantidade: number;
 }
 
+export type TipoProduto = 'receita' | 'revenda';
+
 export interface FichaTecnica {
   id: string;
   nome: string;
+  /**
+   * 'receita' = combina N insumos (indústria/produção própria).
+   * 'revenda' = compra um produto pronto e revende (ex.: açougue que
+   * compra carne e revende no balcão) — sempre 1 único insumo e
+   * rendimento 1; a perda no corte/porcionamento já é modelada no
+   * `percentualPerda` do próprio insumo, não precisa de "receita".
+   * Ausente em documentos antigos → tratar como 'receita'.
+   */
+  tipo?: TipoProduto;
   itens: ItemFicha[];
   rendimento: number;
   tempoProducaoMinutos: number;

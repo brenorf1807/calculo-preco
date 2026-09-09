@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { FichaTecnica, Insumo } from '../../models/models';
+import { FichaTecnica, Insumo, TipoProduto } from '../../models/models';
 
 @Component({
   selector: 'app-fichas-tecnicas',
@@ -20,6 +20,7 @@ export class FichasTecnicasComponent implements OnInit {
   erro: string | null = null;
 
   form = this.fb.nonNullable.group({
+    tipo: ['receita' as TipoProduto, Validators.required],
     nome: ['', Validators.required],
     rendimento: [1, [Validators.required, Validators.min(1)]],
     tempoProducaoMinutos: [0, [Validators.required, Validators.min(0)]],
@@ -28,6 +29,10 @@ export class FichasTecnicasComponent implements OnInit {
 
   get itens(): FormArray {
     return this.form.get('itens') as FormArray;
+  }
+
+  get ehRevenda(): boolean {
+    return this.form.controls.tipo.value === 'revenda';
   }
 
   novoItem() {
@@ -45,6 +50,15 @@ export class FichasTecnicasComponent implements OnInit {
     if (this.itens.length > 1) this.itens.removeAt(index);
   }
 
+  /** Trocar para "Revenda" trava a ficha em 1 único insumo e rendimento 1 — não é uma receita, é o produto comprado pronto. */
+  alterarTipo(tipo: TipoProduto): void {
+    this.form.controls.tipo.setValue(tipo);
+    if (tipo === 'revenda') {
+      while (this.itens.length > 1) this.itens.removeAt(this.itens.length - 1);
+      this.form.controls.rendimento.setValue(1);
+    }
+  }
+
   ngOnInit(): void {
     this.api.listarInsumos().subscribe((insumos) => (this.insumos = insumos));
     this.carregar();
@@ -58,20 +72,29 @@ export class FichasTecnicasComponent implements OnInit {
     return this.insumos.find((i) => i.id === id)?.nome ?? '(insumo removido)';
   }
 
+  rotuloTipo(ficha: FichaTecnica): string {
+    return (ficha.tipo ?? 'receita') === 'revenda' ? 'Revenda' : 'Receita';
+  }
+
   editar(ficha: FichaTecnica): void {
     this.editandoId = ficha.id;
     this.itens.clear();
     for (const item of ficha.itens) {
       this.itens.push(this.fb.nonNullable.group({ insumoId: [item.insumoId, Validators.required], quantidade: [item.quantidade, Validators.required] }));
     }
-    this.form.patchValue({ nome: ficha.nome, rendimento: ficha.rendimento, tempoProducaoMinutos: ficha.tempoProducaoMinutos });
+    this.form.patchValue({
+      tipo: ficha.tipo ?? 'receita',
+      nome: ficha.nome,
+      rendimento: ficha.rendimento,
+      tempoProducaoMinutos: ficha.tempoProducaoMinutos,
+    });
   }
 
   cancelar(): void {
     this.editandoId = null;
     this.itens.clear();
     this.itens.push(this.novoItem());
-    this.form.patchValue({ nome: '', rendimento: 1, tempoProducaoMinutos: 0 });
+    this.form.patchValue({ tipo: 'receita', nome: '', rendimento: 1, tempoProducaoMinutos: 0 });
   }
 
   salvar(): void {

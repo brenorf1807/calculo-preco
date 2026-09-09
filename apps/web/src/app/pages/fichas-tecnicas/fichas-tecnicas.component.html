@@ -1,5 +1,9 @@
 <h1>Fichas técnicas</h1>
-<p>Composição de cada produto (BOM). MVP: 1 nível — cada item é um insumo direto.</p>
+<p>
+  Composição de cada produto. <strong>Receita</strong>: combina vários insumos (indústria, confeitaria...).
+  <strong>Revenda</strong>: compra um produto pronto e revende (açougue, mercearia...) — a perda no corte/porcionamento
+  já é o campo "perda técnica" do próprio insumo.
+</p>
 
 <div class="alerta alerta-atencao" *ngIf="!insumos.length">
   Cadastre insumos antes de criar uma ficha técnica.
@@ -10,6 +14,7 @@
     <thead>
       <tr>
         <th>Nome</th>
+        <th>Tipo</th>
         <th>Rendimento</th>
         <th>Tempo (min)</th>
         <th></th>
@@ -18,6 +23,7 @@
     <tbody>
       <tr *ngFor="let f of fichas">
         <td>{{ f.nome }}</td>
+        <td>{{ rotuloTipo(f) }}</td>
         <td>{{ f.rendimento }} un.</td>
         <td>{{ f.tempoProducaoMinutos }}</td>
         <td class="linha-acoes">
@@ -32,22 +38,28 @@
 <div class="card">
   <h2>{{ editandoId ? 'Editar ficha técnica' : 'Nova ficha técnica' }}</h2>
   <form [formGroup]="form" (ngSubmit)="salvar()">
+    <label>Tipo de produto</label>
+    <div class="linha-acoes" style="margin-bottom: 1rem">
+      <button type="button" [class.primario]="!ehRevenda" (click)="alterarTipo('receita')">Receita (combino insumos)</button>
+      <button type="button" [class.primario]="ehRevenda" (click)="alterarTipo('revenda')">Revenda (compro pronto)</button>
+    </div>
+
     <div class="grid-form">
       <div>
         <label>Nome do produto</label>
-        <input formControlName="nome" placeholder="Ex.: Bolo de pote" />
+        <input formControlName="nome" [placeholder]="ehRevenda ? 'Ex.: Picanha' : 'Ex.: Bolo de pote'" />
       </div>
-      <div>
+      <div *ngIf="!ehRevenda">
         <label>Rendimento (unidades produzidas)</label>
         <input type="number" formControlName="rendimento" />
       </div>
       <div>
-        <label>Tempo de produção total (min)</label>
+        <label>{{ ehRevenda ? 'Tempo de porcionamento/preparo (min, opcional)' : 'Tempo de produção total (min)' }}</label>
         <input type="number" formControlName="tempoProducaoMinutos" />
       </div>
     </div>
 
-    <h3>Insumos da ficha</h3>
+    <h3>{{ ehRevenda ? 'Produto comprado' : 'Insumos da ficha' }}</h3>
     <div formArrayName="itens">
       <div class="grid-form" *ngFor="let item of itens.controls; let i = index" [formGroupName]="i" style="margin-bottom: 0.5rem">
         <div>
@@ -58,15 +70,19 @@
           </select>
         </div>
         <div>
-          <label>Quantidade (na unidade de consumo do insumo)</label>
+          <label>{{ ehRevenda ? 'Quantidade vendida por unidade (na unidade de consumo do insumo)' : 'Quantidade (na unidade de consumo do insumo)' }}</label>
           <input type="number" step="0.0001" formControlName="quantidade" />
         </div>
-        <div style="display: flex; align-items: flex-end">
+        <div style="display: flex; align-items: flex-end" *ngIf="!ehRevenda">
           <button type="button" class="perigo" (click)="removerItem(i)" [disabled]="itens.length === 1">Remover item</button>
         </div>
       </div>
     </div>
-    <button type="button" (click)="adicionarItem()">+ Adicionar insumo</button>
+    <button type="button" *ngIf="!ehRevenda" (click)="adicionarItem()">+ Adicionar insumo</button>
+    <p class="aviso-legal" *ngIf="ehRevenda">
+      Ex.: se o insumo "Picanha" já está cadastrado em kg com a perda técnica do corte, e você vende a peça inteira,
+      quantidade = 1. Se vende em bifes porcionados de 200g, cadastre o insumo em kg e ponha quantidade = 0,2 aqui.
+    </p>
 
     <div *ngIf="erro" class="alerta alerta-critico" style="margin-top: 1rem">{{ erro }}</div>
     <div class="linha-acoes">
