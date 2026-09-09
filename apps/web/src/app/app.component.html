@@ -1,5 +1,5 @@
 <div class="app-shell">
-  <header class="app-header">
+  <header class="app-header" *ngIf="currentUser$ | async as user">
     <div class="brand">Cálculo de Preço</div>
     <nav>
       <a routerLink="/calculo" routerLinkActive="active">Calcular preço</a>
@@ -8,6 +8,7 @@
       <a routerLink="/custos-fixos" routerLinkActive="active">Custos fixos</a>
       <a routerLink="/canais-venda" routerLinkActive="active">Canais de venda</a>
       <a routerLink="/empresa" routerLinkActive="active">Empresa</a>
+      <button (click)="sair()" style="margin-left: auto">Sair ({{ user.email }})</button>
     </nav>
   </header>
   <main class="app-content">

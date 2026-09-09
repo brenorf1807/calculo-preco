@@ -124,6 +124,8 @@ export interface CalculoPrecoRequest {
   canalIds: string[];
   volumeEstimadoMensal: number;
   criterioRateio: 'volume' | 'tempo_producao';
+  /** Só usado quando criterioRateio = "tempo_producao": volume mensal estimado dos DEMAIS produtos do mix. */
+  mixParaRateioPorTempo?: { fichaTecnicaId: string; volumeEstimadoMensal: number }[];
   percentualMargemLiquidaDesejada: number;
   custoMaoDeObra?: {
     modo: 'manual' | 'derivado';
@@ -141,6 +143,7 @@ export interface EngenhariaReversaRequest {
   precoMercado: number;
   volumeEstimadoMensal: number;
   criterioRateio: 'volume' | 'tempo_producao';
+  dataReferencia?: string;
 }
 
 export interface EngenhariaReversaResultado {

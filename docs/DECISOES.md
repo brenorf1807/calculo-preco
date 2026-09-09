@@ -4,7 +4,13 @@ O prompt original pede explicitamente para "questionar premissas ambíguas em ve
 
 ## Decisões de modelagem
 
-**Stack**: Angular + TypeScript no frontend, Node/Express no backend, motor de cálculo em TypeScript puro — combinado com o usuário, pensando na integração futura com Firebase (SDK nativo em JS/TS).
+**Stack**: Angular + TypeScript, sem backend próprio — combinado com o usuário. O motor de cálculo (TypeScript puro) roda direto no navegador, dentro do Angular; o Firestore substitui tanto o banco de dados quanto a API que existiam numa primeira versão (Node/Express), removida quando essa decisão foi tomada. Ver a seção "Sem backend" abaixo.
+
+**Sem backend (Firestore + Auth direto do Angular).** A primeira versão deste sistema tinha uma API Node/Express entre o Angular e o banco de dados. O usuário pediu explicitamente para eliminar essa camada: o Angular fala direto com o Firestore pelo SDK do navegador, e o motor de cálculo (que já era TypeScript puro, sem dependência de Node) passou a ser importado direto pelo Angular em vez de rodar num servidor. Consequências assumidas conscientemente:
+- **`firestore.rules` vira a única linha de defesa dos dados** — não existe mais uma camada de validação/autorização de servidor. As regras isolam tudo por `uid` autenticado (`users/{uid}/...`).
+- **Sem auto-cadastro de usuários.** Como é um app de uso pessoal/de uma empresa (não um produto multi-cliente), a tela de login não tem "criar conta" — o usuário cria seu próprio acesso no Console do Firebase (Authentication → Users). Abrir cadastro público exigiria pensar em confirmação de e-mail, abuso de quota, etc., fora do escopo pedido.
+- **Sem seed de dados de demonstração**: o backend antigo populava dados de exemplo ao subir; sem servidor, isso não existe mais — o usuário cadastra os próprios dados pela interface desde o primeiro acesso.
+- **Regras fiscais (tabelas do Simples/MEI) continuam sendo config estática do próprio motor de cálculo** (não viram documentos no Firestore no MVP) — atualizar uma tabela para uma vigência nova ainda é uma alteração de código em `packages/engine/src/tax/*-tabelas.ts`, publicada com o próximo deploy do front. Levar isso para o Firestore (editável sem redeploy) é uma melhoria possível de fase futura, não feita agora para não aumentar o escopo desta migração.
 
 **DAS-MEI não é calculado pelo sistema.** O valor muda todo mês de janeiro (é indexado ao salário mínimo) e sua composição exata (INSS 5% + ICMS R$1 e/ou ISS R$5) é fácil de errar. Decisão: pedir o valor como **entrada do usuário** (ele confere no gerador de boleto do Portal do Empreendedor), em vez de tentar adivinhar um número que ficaria desatualizado ou errado. Isso respeita a restrição do prompt de nunca hardcodar alíquota — e um valor "chutado" seria pior que pedir a entrada.
 
@@ -12,7 +18,7 @@ O prompt original pede explicitamente para "questionar premissas ambíguas em ve
 
 **Rateio de custo fixo por tempo de produção** foi implementado recebendo o mix completo de produtos (ficha técnica + volume estimado de cada um) como parâmetro da chamada de cálculo, e não como um estado persistido de "plano de produção mensal". Trade-off consciente para não introduzir uma entidade nova (plano de produção) que o prompt não pediu explicitamente no MVP.
 
-**Composição do preço para relatório é só dado de exibição.** Os valores de matéria-prima/embalagem/mão de obra/tributos etc. que aparecem na barra de composição são calculados em `Decimal` (precisão arbitrária) e não passam por arredondamento a centavos — a soma deles pode ficar 1 centavo diferente do preço de venda final (que É arredondado). Isso é o mesmo comportamento de qualquer nota fiscal com itens fracionários e está documentado no código (`calcularComposicao` em `packages/api/src/services/calculo.service.ts`).
+**Composição do preço para relatório é só dado de exibição.** Os valores de matéria-prima/embalagem/mão de obra/tributos etc. que aparecem na barra de composição são calculados em `Decimal` (precisão arbitrária) e não passam por arredondamento a centavos — a soma deles pode ficar 1 centavo diferente do preço de venda final (que É arredondado). Isso é o mesmo comportamento de qualquer nota fiscal com itens fracionários e está documentado no código (`apps/web/src/app/services/pricing.service.ts`).
 
 ## Pontos que dependem de confirmação com um contador (sinalizados no sistema)
 
@@ -29,4 +35,5 @@ O prompt original pede explicitamente para "questionar premissas ambíguas em ve
 - Motor de vigências completo da Reforma Tributária (CBS/IBS), simulador de regime tradicional × híbrido, projeções 2027–2033.
 - Exportação de PDF de orçamento e planilha para o contador.
 - Lucro Presumido e Lucro Real (a interface `RegimeTributarioStrategy` já foi desenhada para comportar novas estratégias sem alterar o motor).
-- Integração com Firebase (Auth + Firestore) — combinado como próximo passo, aguardando as credenciais do usuário.
+- Auto-cadastro de novos usuários (signup) — por decisão deliberada, não só por escopo; ver "Sem backend" acima.
+- Tabelas fiscais editáveis via Firestore sem redeploy (hoje são config estática do motor de cálculo).

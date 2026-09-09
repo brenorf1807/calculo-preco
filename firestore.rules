@@ -1,0 +1,30 @@
+rules_version = '2';
+
+// Sem backend: o Angular fala direto com o Firestore, então estas regras
+// são a ÚNICA coisa protegendo os dados (insumos, custos, margens do
+// negócio). Cada usuário autenticado só enxerga/escreve dentro do seu
+// próprio "users/{uid}" — ninguém, nem outro usuário autenticado, acessa
+// os dados de outro uid.
+//
+// Como aplicar: Console do Firebase → Firestore Database → Regras → cole
+// este arquivo → Publicar. (Ou, com o Firebase CLI instalado e logado:
+// `firebase deploy --only firestore:rules` na raiz do projeto, com um
+// `firebase.json` apontando para este arquivo.)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      function ehDono() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+
+      allow read, write: if ehDono();
+
+      match /{colecao}/{documento} {
+        allow read, write: if ehDono();
+      }
+    }
+
+    // Qualquer outro caminho é negado por padrão (comportamento implícito
+    // do Firestore quando nenhuma regra "match" cobre o documento).
+  }
+}

@@ -1,0 +1,22 @@
+<div style="max-width: 360px; margin: 3rem auto">
+  <h1 style="text-align: center">Cálculo de Preço</h1>
+  <div class="card">
+    <form [formGroup]="form" (ngSubmit)="entrar()">
+      <label>E-mail</label>
+      <input type="email" formControlName="email" autocomplete="username" />
+      <div style="height: 0.75rem"></div>
+      <label>Senha</label>
+      <input type="password" formControlName="senha" autocomplete="current-password" />
+
+      <div *ngIf="erro" class="alerta alerta-critico" style="margin-top: 1rem">{{ erro }}</div>
+      <div class="linha-acoes">
+        <button type="submit" class="primario" [disabled]="form.invalid || entrando" style="width: 100%">
+          {{ entrando ? 'Entrando...' : 'Entrar' }}
+        </button>
+      </div>
+    </form>
+  </div>
+  <p class="aviso-legal" style="text-align: center">
+    Sem conta ainda? Peça para criar seu acesso no Console do Firebase (Authentication → Users).
+  </p>
+</div>

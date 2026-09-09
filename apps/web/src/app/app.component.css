@@ -41,6 +41,15 @@ nav a.active {
   font-weight: 600;
 }
 
+nav button {
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+}
+
 .app-content {
   flex: 1;
   padding: 1rem;

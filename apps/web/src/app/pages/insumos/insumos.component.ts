@@ -77,7 +77,7 @@ export class InsumosComponent implements OnInit {
         this.cancelar();
         this.carregar();
       },
-      error: (err) => (this.erro = err?.error?.erro ?? 'Erro ao salvar insumo.'),
+      error: (err) => (this.erro = err?.message ?? 'Erro ao salvar insumo.'),
     });
   }
 

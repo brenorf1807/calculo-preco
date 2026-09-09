@@ -48,7 +48,7 @@ export class EmpresaComponent implements OnInit {
     this.salvo = false;
     this.api.salvarEmpresa(this.form.getRawValue()).subscribe({
       next: () => (this.salvo = true),
-      error: (err) => (this.erro = err?.error?.erro ?? 'Erro ao salvar dados da empresa.'),
+      error: (err) => (this.erro = err?.message ?? 'Erro ao salvar dados da empresa.'),
     });
   }
 }

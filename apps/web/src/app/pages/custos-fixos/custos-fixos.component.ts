@@ -56,7 +56,7 @@ export class CustosFixosComponent implements OnInit {
         this.cancelar();
         this.carregar();
       },
-      error: (err) => (this.erro = err?.error?.erro ?? 'Erro ao salvar despesa fixa.'),
+      error: (err) => (this.erro = err?.message ?? 'Erro ao salvar despesa fixa.'),
     });
   }
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import { PricingService } from '../../services/pricing.service';
 import { FichaTecnica, CanalVenda, ResultadoPrecoPorCanalDTO } from '../../models/models';
 
 interface SegmentoComposicao {
@@ -43,6 +44,7 @@ const ROTULOS: Record<string, string> = {
 })
 export class CalculoComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly pricing = inject(PricingService);
   private readonly fb = inject(FormBuilder);
 
   fichas: FichaTecnica[] = [];
@@ -85,7 +87,7 @@ export class CalculoComponent implements OnInit {
     this.carregando = true;
     this.resultados = null;
     const v = this.form.getRawValue();
-    this.api
+    this.pricing
       .calcularPreco({
         fichaTecnicaId: v.fichaTecnicaId,
         canalIds: v.canalIds,
@@ -100,7 +102,7 @@ export class CalculoComponent implements OnInit {
           this.carregando = false;
         },
         error: (err) => {
-          this.erro = err?.error?.erro ?? 'Erro ao calcular preço.';
+          this.erro = err?.message ?? 'Erro ao calcular preço.';
           this.carregando = false;
         },
       });

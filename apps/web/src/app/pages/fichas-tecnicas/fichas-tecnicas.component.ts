@@ -84,7 +84,7 @@ export class FichasTecnicasComponent implements OnInit {
         this.cancelar();
         this.carregar();
       },
-      error: (err) => (this.erro = err?.error?.erro ?? 'Erro ao salvar ficha técnica.'),
+      error: (err) => (this.erro = err?.message ?? 'Erro ao salvar ficha técnica.'),
     });
   }
 
